@@ -130,10 +130,18 @@ export const initSocket = (httpServer) => {
       'call:invite',
       safe(socket, async ({ chatId, toUserId, callType, offer }, ack) => {
         const call = await callsService.startCall(chatId, userId, toUserId, callType);
-        emitToUser(toUserId, 'call:invite', { callId: call.id, chatId, callType, offer, from: userId });
+        const caller = await findUserById(userId);
+        emitToUser(toUserId, 'call:invite', {
+          callId: call.id,
+          chatId,
+          callType,
+          offer,
+          from: userId,
+          fromName: caller?.name || 'LifeMate user',
+          fromAvatar: caller?.avatar_url || null,
+        });
 
         if (!isOnline(toUserId)) {
-          const caller = await findUserById(userId);
           await notifyIncomingCall(toUserId, { chatId, callerName: caller?.name || 'LifeMate', callType });
         }
         ack?.({ success: true, callId: call.id });

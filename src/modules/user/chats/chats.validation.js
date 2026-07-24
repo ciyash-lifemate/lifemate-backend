@@ -2,7 +2,12 @@ import Joi from 'joi';
 import { validate } from '../../../middlewares/validate.middleware.js';
 
 const createChatSchema = Joi.object({
-  userId: Joi.number().integer().positive().required(),
+  // TiDB's AUTO_RANDOM user ids regularly exceed Number.MAX_SAFE_INTEGER, so
+  // this must stay a string all the way to the SQL bind param - Joi.number()
+  // (and any Number(...) conversion) silently loses precision above 2^53.
+  userId: Joi.string().pattern(/^[0-9]+$/).required().messages({
+    'string.pattern.base': '"userId" must be a numeric id',
+  }),
 });
 
 const sendMessageSchema = Joi.object({

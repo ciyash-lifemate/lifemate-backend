@@ -51,3 +51,4 @@ export const uploadChatFile = multer({
   fileFilter,
   limits: { fileSize: env.upload.maxSizeMb * 1024 * 1024 },
 }).single('file');
+    

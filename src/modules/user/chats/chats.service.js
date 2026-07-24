@@ -51,7 +51,8 @@ const findMessageById = async (messageId) => {
 };
 
 export const startChat = async (userId, otherUserId) => {
-  if (Number(otherUserId) === Number(userId)) {
+  // String compare, not Number() - these ids can exceed Number.MAX_SAFE_INTEGER.
+  if (String(otherUserId) === String(userId)) {
     throw new ApiError(400, 'Cannot start a chat with yourself');
   }
 
@@ -65,7 +66,10 @@ export const startChat = async (userId, otherUserId) => {
 
   if (existing[0]) return { chatId: existing[0].id };
 
-  const [result] = await pool.query('INSERT INTO chats () VALUES ()');
+  const [result] = await pool.query(
+    'INSERT INTO chats (user_one_id, user_two_id) VALUES (?, ?)',
+    [userId, otherUserId]
+  );
   const chatId = result.insertId;
   await pool.query('INSERT INTO chat_participants (chat_id, user_id) VALUES (?, ?), (?, ?)', [
     chatId,
