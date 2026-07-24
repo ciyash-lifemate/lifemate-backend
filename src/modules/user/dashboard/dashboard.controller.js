@@ -1,0 +1,17 @@
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+const sendSuccess = (res, { statusCode = 200, message, data } = {}) => {
+  res.status(statusCode).json({
+    success: true,
+    ...(message !== undefined && { message }),
+    ...(data !== undefined && { data }),
+  });
+};
+import { getDashboardSummary } from './dashboard.service.js';
+
+export const getDashboard = asyncHandler(async (req, res) => {
+  const summary = await getDashboardSummary(req.userId);
+  sendSuccess(res, { data: { user: req.user, ...summary } });
+});

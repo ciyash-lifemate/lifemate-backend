@@ -1,0 +1,486 @@
+{
+  "info": {
+    "name": "LifeMate API",
+    "description": "Auto-generated from src/routes for the LifeMate backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api/v1" },
+    { "key": "userToken", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "User / Auth",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"+919876543210\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/auth/otp/send", "host": ["{{baseUrl}}"], "path": ["user", "auth", "otp", "send"] }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"+919876543210\",\n  \"otp\": \"123456\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/auth/otp/verify", "host": ["{{baseUrl}}"], "path": ["user", "auth", "otp", "verify"] }
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"idToken\": \"<google-id-token>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/auth/google", "host": ["{{baseUrl}}"], "path": ["user", "auth", "google"] }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/auth/me", "host": ["{{baseUrl}}"], "path": ["user", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"language\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.png\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/auth/me", "host": ["{{baseUrl}}"], "path": ["user", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/auth/search?q=john", "host": ["{{baseUrl}}"], "path": ["user", "auth", "search"], "query": [{ "key": "q", "value": "john" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/dashboard", "host": ["{{baseUrl}}"], "path": ["user", "dashboard"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Reminders",
+      "item": [
+        {
+          "name": "Get Today's Reminders",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/reminders/today", "host": ["{{baseUrl}}"], "path": ["user", "reminders", "today"] }
+          }
+        },
+        {
+          "name": "Get Calendar Reminders",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/reminders/calendar?from=2026-07-01&to=2026-07-31", "host": ["{{baseUrl}}"], "path": ["user", "reminders", "calendar"], "query": [{ "key": "from", "value": "2026-07-01" }, { "key": "to", "value": "2026-07-31" }] }
+          }
+        },
+        {
+          "name": "List Reminders",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/reminders?type=medicine", "host": ["{{baseUrl}}"], "path": ["user", "reminders"], "query": [{ "key": "type", "value": "medicine" }, { "key": "from", "value": "", "disabled": true }, { "key": "to", "value": "", "disabled": true }] }
+          }
+        },
+        {
+          "name": "Create Reminder",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"type\": \"medicine\",\n  \"title\": \"Take vitamin D\",\n  \"description\": \"After breakfast\",\n  \"reminderDate\": \"2026-07-25\",\n  \"reminderTime\": \"09:00\",\n  \"repeatType\": \"daily\",\n  \"dosage\": \"1 tablet\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/reminders", "host": ["{{baseUrl}}"], "path": ["user", "reminders"] }
+          }
+        },
+        {
+          "name": "Get Reminder",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/reminders/:id", "host": ["{{baseUrl}}"], "path": ["user", "reminders", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Update Reminder",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Take vitamin D (updated)\",\n  \"reminderTime\": \"09:30\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/reminders/:id", "host": ["{{baseUrl}}"], "path": ["user", "reminders", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Complete Reminder",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isCompleted\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/user/reminders/:id/complete", "host": ["{{baseUrl}}"], "path": ["user", "reminders", ":id", "complete"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Delete Reminder",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/reminders/:id", "host": ["{{baseUrl}}"], "path": ["user", "reminders", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Notes",
+      "item": [
+        {
+          "name": "List Notes",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notes?search=", "host": ["{{baseUrl}}"], "path": ["user", "notes"], "query": [{ "key": "search", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Note",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Shopping list\",\n  \"content\": \"Milk, eggs, bread\",\n  \"color\": \"#FFEE58\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/notes", "host": ["{{baseUrl}}"], "path": ["user", "notes"] }
+          }
+        },
+        {
+          "name": "Get Note",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notes/:id", "host": ["{{baseUrl}}"], "path": ["user", "notes", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Update Note",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Shopping list (updated)\",\n  \"content\": \"Milk, eggs, bread, butter\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/notes/:id", "host": ["{{baseUrl}}"], "path": ["user", "notes", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Delete Note",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notes/:id", "host": ["{{baseUrl}}"], "path": ["user", "notes", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notifications?type=all", "host": ["{{baseUrl}}"], "path": ["user", "notifications"], "query": [{ "key": "type", "value": "all" }] }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notifications/unread-count", "host": ["{{baseUrl}}"], "path": ["user", "notifications", "unread-count"] }
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["user", "notifications", "read-all"] }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/notifications/:id/read", "host": ["{{baseUrl}}"], "path": ["user", "notifications", ":id", "read"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Chats",
+      "item": [
+        {
+          "name": "List Chats",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/chats", "host": ["{{baseUrl}}"], "path": ["user", "chats"] }
+          }
+        },
+        {
+          "name": "Create Chat",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/user/chats", "host": ["{{baseUrl}}"], "path": ["user", "chats"] }
+          }
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/chats/:chatId/messages?limit=50", "host": ["{{baseUrl}}"], "path": ["user", "chats", ":chatId", "messages"], "query": [{ "key": "before", "value": "", "disabled": true }, { "key": "limit", "value": "50" }], "variable": [{ "key": "chatId", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hey, how are you?\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/chats/:chatId/messages", "host": ["{{baseUrl}}"], "path": ["user", "chats", ":chatId", "messages"], "variable": [{ "key": "chatId", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Mark Chat Read",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/chats/:chatId/read", "host": ["{{baseUrl}}"], "path": ["user", "chats", ":chatId", "read"], "variable": [{ "key": "chatId", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Pin Chat",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isPinned\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/user/chats/:chatId/pin", "host": ["{{baseUrl}}"], "path": ["user", "chats", ":chatId", "pin"], "variable": [{ "key": "chatId", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / AI Chat",
+      "item": [
+        {
+          "name": "Get AI Messages",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/ai-chat/messages?limit=50", "host": ["{{baseUrl}}"], "path": ["user", "ai-chat", "messages"], "query": [{ "key": "before", "value": "", "disabled": true }, { "key": "limit", "value": "50" }] }
+          }
+        },
+        {
+          "name": "Send AI Message",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Remind me to call mom tomorrow at 6pm\"\n}" },
+            "url": { "raw": "{{baseUrl}}/user/ai-chat/messages", "host": ["{{baseUrl}}"], "path": ["user", "ai-chat", "messages"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Settings",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/user/settings", "host": ["{{baseUrl}}"], "path": ["user", "settings"] }
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pushNotifications\": true,\n  \"reminderNotifications\": true,\n  \"chatNotifications\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/user/settings", "host": ["{{baseUrl}}"], "path": ["user", "settings"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User / Banners (Public)",
+      "item": [
+        {
+          "name": "Get Active Banners",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/user/banners", "host": ["{{baseUrl}}"], "path": ["user", "banners"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin / Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"changeme123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/auth/login", "host": ["{{baseUrl}}"], "path": ["admin", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Admin Me",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/auth/me", "host": ["{{baseUrl}}"], "path": ["admin", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin / Banners",
+      "item": [
+        {
+          "name": "List Banners",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/banners", "host": ["{{baseUrl}}"], "path": ["admin", "banners"] }
+          }
+        },
+        {
+          "name": "Create Banner",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Summer Sale\",\n  \"imageUrl\": \"https://example.com/banner.png\",\n  \"linkUrl\": \"https://example.com/sale\",\n  \"isActive\": true,\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2026-07-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/banners", "host": ["{{baseUrl}}"], "path": ["admin", "banners"] }
+          }
+        },
+        {
+          "name": "Get Banner",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/banners/:id", "host": ["{{baseUrl}}"], "path": ["admin", "banners", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Update Banner",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Summer Sale (Extended)\",\n  \"isActive\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/banners/:id", "host": ["{{baseUrl}}"], "path": ["admin", "banners", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Delete Banner",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/banners/:id", "host": ["{{baseUrl}}"], "path": ["admin", "banners", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin / Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/users?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["admin", "users"], "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }, { "key": "search", "value": "", "disabled": true }] }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/users/:id", "host": ["{{baseUrl}}"], "path": ["admin", "users", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Set User Active",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/users/:id/active", "host": ["{{baseUrl}}"], "path": ["admin", "users", ":id", "active"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/users/:id", "host": ["{{baseUrl}}"], "path": ["admin", "users", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin / Stats",
+      "item": [
+        {
+          "name": "Get Admin Stats",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}" }] },
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        }
+      ]
+    }
+  ]
+}

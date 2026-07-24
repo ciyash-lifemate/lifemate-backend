@@ -1,0 +1,33 @@
+{
+  "name": "lifemate-ai",
+  "version": "1.0.0",
+  "description": "Node.js + Express + TiDB (MySQL protocol) backend",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node scripts/migrate.mjs",
+    "admin:create": "node scripts/create-admin.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "expo-server-sdk": "^6.1.0",
+    "express": "^4.19.2",
+    "google-auth-library": "^9.14.1",
+    "helmet": "^7.1.0",
+    "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.2.0",
+    "mysql2": "^3.11.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.1",
+    "winston": "^3.19.0"
+  }
+}
