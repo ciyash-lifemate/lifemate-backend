@@ -21,9 +21,6 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Chat media (images/videos/audio/documents) - see modules/user/uploads.
-  app.use('/uploads', express.static(env.upload.dir));
-
   app.use('/api/v1', apiRoutes);
 
   app.use(notFound);

@@ -13,19 +13,15 @@ export const getSettings = async (userId) => {
   return findSettingsByUserId(userId);
 };
 
-export const updateSettings = async (
-  userId,
-  { pushNotifications, reminderNotifications, chatNotifications }
-) => {
+export const updateSettings = async (userId, { pushNotifications, reminderNotifications }) => {
   await getSettings(userId); // ensure a row exists before updating
 
   await pool.query(
     `UPDATE user_settings SET
       push_notifications = COALESCE(?, push_notifications),
-      reminder_notifications = COALESCE(?, reminder_notifications),
-      chat_notifications = COALESCE(?, chat_notifications)
+      reminder_notifications = COALESCE(?, reminder_notifications)
      WHERE user_id = ?`,
-    [pushNotifications, reminderNotifications, chatNotifications, userId]
+    [pushNotifications, reminderNotifications, userId]
   );
   return findSettingsByUserId(userId);
 };

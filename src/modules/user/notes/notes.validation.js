@@ -15,6 +15,8 @@ const updateNoteSchema = Joi.object({
 
 const listNotesSchema = Joi.object({
   search: Joi.string().max(100).allow(''),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(100).default(20),
 });
 
 export const validateCreateNote = validate(createNoteSchema);

@@ -70,9 +70,6 @@ export const findUserById = async (id) => {
   return rows[0];
 };
 
-// Shared by the Express auth middleware and the Socket.IO handshake
-// middleware - both just need "is this JWT valid and who does it belong
-// to", they only differ in how they get the token in and report failure.
 export const verifyUserAccessToken = async (token) => {
   const payload = jwt.verify(token, env.jwt.secret); // throws on invalid/expired
   const user = await findUserById(payload.userId);
@@ -235,7 +232,7 @@ export const deleteUserById = async (id) => {
   return result.affectedRows > 0;
 };
 
-const ALLOWED_COUNT_TABLES = ['users', 'reminders', 'notes', 'messages', 'chats'];
+const ALLOWED_COUNT_TABLES = ['users', 'reminders', 'notes'];
 export const countTable = async (table) => {
   if (!ALLOWED_COUNT_TABLES.includes(table)) throw new Error(`countTable: unsupported table "${table}"`);
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM ${table}`);

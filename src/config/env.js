@@ -42,23 +42,10 @@ export const env = {
     debugExposeOtp: process.env.DEBUG_OTP === 'true',
   },
 
-  upload: {
-    dir: process.env.UPLOAD_DIR || 'uploads',
-    maxSizeMb: Number(process.env.UPLOAD_MAX_MB) || 50,
-    // Where uploaded files are reachable from - prefixed onto the stored
-    // relative path to build the URL returned to clients.
-    publicBaseUrl: process.env.UPLOAD_PUBLIC_BASE_URL || `http://localhost:${Number(process.env.PORT) || 4000}`,
-  },
-
-  socket: {
-    // Comma-separated list, e.g. "https://app.example.com,exp://192.168.1.5:8081".
-    // Left as "*" (Socket.IO's own default) for local/Expo Go development.
-    corsOrigin: process.env.SOCKET_CORS_ORIGIN ? process.env.SOCKET_CORS_ORIGIN.split(',') : '*',
-  },
-
   expo: {
     // Only needed if "Enhanced Security for Push Notifications" is enabled
     // on the Expo account - undefined is a valid, working config otherwise.
     accessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
   },
 };
+   

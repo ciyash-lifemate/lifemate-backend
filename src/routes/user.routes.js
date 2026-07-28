@@ -5,12 +5,10 @@ import { dashboardRoutes } from '../modules/user/dashboard/dashboard.route.js';
 import { reminderRoutes } from '../modules/user/reminders/reminders.route.js';
 import { noteRoutes } from '../modules/user/notes/notes.route.js';
 import { notificationRoutes } from '../modules/user/notifications/notifications.route.js';
-import { chatRoutes } from '../modules/user/chats/chats.route.js';
 import { aiChatRoutes } from '../modules/user/ai-chat/ai-chat.route.js';
 import { settingsRoutes } from '../modules/user/settings/settings.route.js';
 import { bannerPublicRoutes } from '../modules/admin/banners/banners.route.js';
-import { uploadRoutes } from '../modules/user/uploads/uploads.route.js';
-import { callRoutes } from '../modules/user/calls/calls.route.js';
+import { businessCardRoutes } from '../modules/user/business-card/business-card.route.js';
 
 const router = Router();
 
@@ -25,10 +23,8 @@ router.use('/dashboard', authenticateUser, dashboardRoutes);
 router.use('/reminders', authenticateUser, reminderRoutes);
 router.use('/notes', authenticateUser, noteRoutes);
 router.use('/notifications', authenticateUser, notificationRoutes);
-router.use('/chats', authenticateUser, chatRoutes);
 router.use('/ai-chat', authenticateUser, aiChatRoutes);
 router.use('/settings', authenticateUser, settingsRoutes);
-router.use('/uploads', authenticateUser, uploadRoutes);
-router.use('/calls', authenticateUser, callRoutes);
+router.use('/business-card', authenticateUser, businessCardRoutes);
 
 export const userRoutes = router;  

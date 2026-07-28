@@ -2,7 +2,9 @@ import Joi from 'joi';
 import { validate } from '../../../middlewares/validate.middleware.js';
 
 const listNotificationsSchema = Joi.object({
-  type: Joi.string().valid('all', 'reminder', 'chat', 'system').default('all'),
+  type: Joi.string().valid('all', 'reminder', 'system').default('all'),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(100).default(30),
 });
 
 const deviceTokenSchema = Joi.object({

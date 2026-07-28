@@ -2,7 +2,7 @@ import * as remindersService from './reminders.service.js';
 import { notifyReminderDue } from '../notifications/notifications.service.js';
 import { logger } from '../../../utils/logger.js';
 
-const CHECK_INTERVAL_MS = 60_000;
+const CHECK_INTERVAL_MS = 15_000;
 
 const EMOJI_BY_TYPE = {
   medicine: '💊',
@@ -10,7 +10,9 @@ const EMOJI_BY_TYPE = {
   anniversary: '💍',
   task: '✅',
   note: '📝',
-  custom: '⏰',
+  custom: '📌',
+  event: '📅',
+  alarm: '⏰',
 };
 
 const buildAlertCopy = (reminder) => {
@@ -38,6 +40,10 @@ const checkDueReminders = async () => {
         body,
         referenceId: reminder.id,
         reminderType: reminder.type,
+        recipientName: reminder.title,
+        recipientMobile: reminder.recipient_mobile,
+        wishMessage: reminder.wish_message,
+        voiceMessage: reminder.voice_message,
       });
       await remindersService.markReminderNotified(reminder.id);
     } catch (err) {

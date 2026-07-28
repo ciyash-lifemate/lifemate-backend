@@ -8,7 +8,7 @@ const expo = new Expo({ accessToken: env.expo.accessToken });
 // Sends an Expo push notification to every device a user has registered
 // (see modules/user/notifications for the register/unregister endpoints).
 // Fire-and-forget from the caller's point of view - a push failure should
-// never fail the request that triggered it (a new message, an incoming call).
+// never fail the request that triggered it (e.g. a reminder falling due).
 export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   const [rows] = await pool.query('SELECT expo_push_token FROM device_tokens WHERE user_id = ?', [
     userId,
@@ -17,7 +17,11 @@ export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   const tokens = rows.map((r) => r.expo_push_token).filter((t) => Expo.isExpoPushToken(t));
   if (tokens.length === 0) return;
 
-  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default' }));
+  // channelId must match the Android channel the app actually created
+  // (src/utils/notifications.js) - a mismatch (or omitting it) can route the
+  // notification through Android's own default channel, which may have no
+  // sound configured.
+  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default', channelId: 'reminders-v2' }));
   const chunks = expo.chunkPushNotifications(messages);
   const staleTokens = [];
 

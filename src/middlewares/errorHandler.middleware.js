@@ -11,7 +11,6 @@ const DUPLICATE_FIELD_MESSAGES = {
   email: 'This email is already linked to another account.',
   mobile: 'This mobile number is already registered.',
   google_id: 'This Google account is already linked to another user.',
-  uq_chat_participant: 'That chat already exists.',
   uq_device_token: 'That device is already registered.',
 };
 
@@ -32,11 +31,6 @@ export const errorHandler = (err, req, res, next) => {
 
     if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
       return sendError(res, { statusCode: 409, message: duplicateEntryMessage(err) });
-    }
-    if (err.name === 'MulterError') {
-      const message =
-        err.code === 'LIMIT_FILE_SIZE' ? 'File is too large.' : 'File upload failed.';
-      return sendError(res, { statusCode: 400, message });
     }
     return sendError(res, { statusCode: 500, message: 'Internal server error' });
   }

@@ -20,7 +20,7 @@ export const createNote = async (userId, { title, content, color }) => {
   return findNoteById(result.insertId, userId);
 };
 
-export const listNotes = async (userId, { search } = {}) => {
+export const listNotes = async (userId, { search, page = 1, pageSize = 20 } = {}) => {
   const params = [userId];
   let where = 'WHERE user_id = ?';
   if (search) {
@@ -28,8 +28,13 @@ export const listNotes = async (userId, { search } = {}) => {
     params.push(`%${search}%`, `%${search}%`);
   }
 
-  const [rows] = await pool.query(`SELECT * FROM notes ${where} ORDER BY updated_at DESC`, params);
-  return rows;
+  const offset = (page - 1) * pageSize;
+  const [rows] = await pool.query(
+    `SELECT * FROM notes ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset]
+  );
+  const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM notes ${where}`, params);
+  return { items: rows, total: Number(total), page, pageSize };
 };
 
 export const getNote = async (id, userId) => {

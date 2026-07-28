@@ -1,6 +1,5 @@
 import { pool } from '../../../config/db.js';
 import { sendExpoPush } from '../../../utils/push.js';
-import { isOnline } from '../../../realtime/presence.js';
 class ApiError extends Error {
   constructor(statusCode, message) {
     super(message);
@@ -19,7 +18,7 @@ const insertNotification = async ({ userId, type, title, body, referenceId }) =>
   return rows[0];
 };
 
-export const listNotifications = async (userId, { type } = {}) => {
+export const listNotifications = async (userId, { type, page = 1, pageSize = 30 } = {}) => {
   const params = [userId];
   let where = 'WHERE user_id = ?';
   if (type && type !== 'all') {
@@ -27,11 +26,13 @@ export const listNotifications = async (userId, { type } = {}) => {
     params.push(type);
   }
 
+  const offset = (page - 1) * pageSize;
   const [rows] = await pool.query(
-    `SELECT * FROM notifications ${where} ORDER BY created_at DESC LIMIT 100`,
-    params
+    `SELECT * FROM notifications ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset]
   );
-  return rows;
+  const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM notifications ${where}`, params);
+  return { items: rows, total: Number(total), page, pageSize };
 };
 
 export const getUnreadCount = async (userId) => {
@@ -83,53 +84,38 @@ const pushEnabledFor = async (userId, column) => {
   return Boolean(rows[0].push_notifications) && Boolean(rows[0][column]);
 };
 
-export const notifyNewMessage = async (userId, { chatId, senderName, preview }) => {
-  const notification = await insertNotification({
-    userId,
-    type: 'chat',
-    title: senderName,
-    body: preview,
-    referenceId: chatId,
-  });
-
-  // Only push when the recipient has no open socket - if they're connected
-  // they already got the message over Socket.IO in realtime.
-  if (!isOnline(userId) && (await pushEnabledFor(userId, 'chat_notifications'))) {
-    await sendExpoPush(userId, {
-      title: senderName,
-      body: preview,
-      data: { type: 'chat', chatId },
-    });
-  }
-
-  return notification;
-};
-
-// Called by reminders.scheduler.js when a reminder falls due - unlike a chat
-// message, this always pushes if the setting allows it (not gated on socket
-// presence) since it's a timed alarm, not a "you missed something" nudge.
-export const notifyReminderDue = async (userId, { title, body, referenceId, reminderType }) => {
+// Called by reminders.scheduler.js when a reminder falls due - always pushes
+// if the setting allows it, since it's a timed alarm, not a "you missed
+// something" nudge.
+export const notifyReminderDue = async (
+  userId,
+  { title, body, referenceId, reminderType, recipientName, recipientMobile, wishMessage, voiceMessage }
+) => {
   const notification = await insertNotification({ userId, type: 'reminder', title, body, referenceId });
 
   if (await pushEnabledFor(userId, 'reminder_notifications')) {
     await sendExpoPush(userId, {
       title,
       body,
-      data: { type: 'reminder', reminderId: referenceId, reminderType },
+      // recipientMobile/wishMessage/recipientName are only set on
+      // birthday/anniversary reminders configured with a wish - the app uses
+      // these to offer a one-tap "send via WhatsApp" action on tap, since
+      // there's no way to auto-send through the real WhatsApp app.
+      // voiceMessage is read aloud on-device once the notification's own
+      // alert sound finishes (see _layout.js's notification-received handler).
+      data: {
+        type: 'reminder',
+        reminderId: referenceId,
+        reminderType,
+        recipientName,
+        recipientMobile,
+        wishMessage,
+        voiceMessage,
+      },
     });
   }
 
   return notification;
-};
-
-export const notifyIncomingCall = async (userId, { chatId, callerName, callType }) => {
-  if (await pushEnabledFor(userId, 'chat_notifications')) {
-    await sendExpoPush(userId, {
-      title: `Incoming ${callType} call`,
-      body: callerName,
-      data: { type: 'call', chatId, callType },
-    });
-  }
 };
 
 // --- device tokens (Expo push) ---
