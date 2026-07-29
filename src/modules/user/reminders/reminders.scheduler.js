@@ -13,6 +13,7 @@ const EMOJI_BY_TYPE = {
   custom: '📌',
   event: '📅',
   alarm: '⏰',
+  company: '🏢',
 };
 
 const buildAlertCopy = (reminder) => {
@@ -35,7 +36,7 @@ const checkDueReminders = async () => {
   for (const reminder of due) {
     try {
       const { title, body } = buildAlertCopy(reminder);
-      await notifyReminderDue(reminder.user_id, {
+      const alertData = {
         title,
         body,
         referenceId: reminder.id,
@@ -44,7 +45,26 @@ const checkDueReminders = async () => {
         recipientMobile: reminder.recipient_mobile,
         wishMessage: reminder.wish_message,
         voiceMessage: reminder.voice_message,
-      });
+        groupId: reminder.group_id,
+        projectId: reminder.project_id,
+      };
+
+      // Group reminders fan out to every group member, honoring the
+      // creator's self-reminder toggle (see getGroupTargetUserIds).
+      //
+      // Non-group reminders no longer push to their own owner here - the
+      // mobile app now schedules an on-device local notification for the
+      // owner at save time (see src/utils/localReminders.js), which fires
+      // with no network needed and would double-alert alongside this push
+      // if we kept notifying the owner too. Shared recipients (see
+      // reminder_recipients) still only ever get a server push - a local
+      // notification can't be scheduled on someone else's device.
+      const targetUserIds = reminder.group_id
+        ? await remindersService.getGroupTargetUserIds(reminder.group_id)
+        : await remindersService.getRecipientUserIds(reminder.id);
+      for (const targetUserId of targetUserIds) {
+        await notifyReminderDue(targetUserId, alertData);
+      }
       await remindersService.markReminderNotified(reminder.id);
     } catch (err) {
       logger.error('Failed to send reminder notification', {

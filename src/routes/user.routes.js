@@ -9,6 +9,9 @@ import { aiChatRoutes } from '../modules/user/ai-chat/ai-chat.route.js';
 import { settingsRoutes } from '../modules/user/settings/settings.route.js';
 import { bannerPublicRoutes } from '../modules/admin/banners/banners.route.js';
 import { businessCardRoutes } from '../modules/user/business-card/business-card.route.js';
+import { companyRoutes } from '../modules/user/companies/companies.route.js';
+import { projectRoutes } from '../modules/user/projects/projects.route.js';
+import { reminderGroupRoutes } from '../modules/user/reminder-groups/reminder-groups.route.js';
 
 const router = Router();
 
@@ -26,5 +29,8 @@ router.use('/notifications', authenticateUser, notificationRoutes);
 router.use('/ai-chat', authenticateUser, aiChatRoutes);
 router.use('/settings', authenticateUser, settingsRoutes);
 router.use('/business-card', authenticateUser, businessCardRoutes);
+router.use('/companies', authenticateUser, companyRoutes);
+router.use('/projects', authenticateUser, projectRoutes);
+router.use('/reminder-groups', authenticateUser, reminderGroupRoutes);
 
-export const userRoutes = router;  
+export const userRoutes = router;

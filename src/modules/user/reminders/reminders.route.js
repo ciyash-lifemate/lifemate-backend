@@ -5,6 +5,7 @@ import {
   validateCompleteReminder,
   validateListReminders,
   validateCalendarReminders,
+  validateAddReminderUpdate,
 } from './reminders.validation.js';
 import {
   createReminder,
@@ -15,6 +16,8 @@ import {
   updateReminder,
   completeReminder,
   deleteReminder,
+  getReminderUpdates,
+  addReminderUpdate,
 } from './reminders.controller.js';
 
 const router = Router();
@@ -27,5 +30,7 @@ router.get('/:id', getReminder);
 router.put('/:id', validateUpdateReminder, updateReminder);
 router.patch('/:id/complete', validateCompleteReminder, completeReminder);
 router.delete('/:id', deleteReminder);
+router.get('/:id/updates', getReminderUpdates);
+router.post('/:id/updates', validateAddReminderUpdate, addReminderUpdate);
 
 export const reminderRoutes = router;

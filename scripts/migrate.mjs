@@ -72,11 +72,6 @@ const statements = [
   // against re-notifying the same occurrence on every poll tick.
   `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS last_notified_date DATE NULL`,
 
-  // Widen the type enum for the "recharge" reminder type (mobile/DTH recharge
-  // due-date reminders) - MODIFY COLUMN is safe to re-run.
-  `ALTER TABLE reminders MODIFY COLUMN type
-    ENUM('medicine','birthday','anniversary','note','task','custom','recharge') NOT NULL`,
-
   // Birthday/anniversary wish-sending: the due-reminder push carries these so
   // the app can open WhatsApp pre-filled with the chosen message for this
   // recipient - there's no way to auto-send through the real WhatsApp app
@@ -84,11 +79,6 @@ const statements = [
   // this is a "one tap to send" flow, not a silent auto-send.
   `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS recipient_mobile VARCHAR(20) NULL`,
   `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS wish_message VARCHAR(500) NULL`,
-
-  // Widen the type enum for "Events / Meetings" (Quick Add on Home) -
-  // same MODIFY COLUMN pattern used above for "recharge".
-  `ALTER TABLE reminders MODIFY COLUMN type
-    ENUM('medicine','birthday','anniversary','note','task','custom','recharge','event') NOT NULL`,
 
   // Agenda/todo items for an event or meeting reminder - a JSON array of
   // {text, done} objects, editable via the "+" add-item control in the
@@ -103,10 +93,29 @@ const statements = [
   // reminder-form extras above, available on every reminder type.
   `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS voice_message VARCHAR(500) NULL`,
 
-  // Widen the type enum for "Alarm" (Quick Add on Home) - same MODIFY
-  // COLUMN pattern used above.
+  // Widen the type enum to cover "Recharge" / "Event" / "Alarm" / "Company"
+  // (Quick Add on Home). MODIFY COLUMN re-runs safely as long as it's always
+  // a superset of whatever types already exist in the data - the earlier,
+  // narrower intermediate versions of this same statement (recharge-only,
+  // then +event, then +alarm as a separate statement before +company was
+  // folded in here) were removed rather than kept as history, since
+  // replaying an outdated one against rows that already have a later type
+  // (e.g. 'company') truncates them.
   `ALTER TABLE reminders MODIFY COLUMN type
-    ENUM('medicine','birthday','anniversary','note','task','custom','recharge','event','alarm') NOT NULL`,
+    ENUM('medicine','birthday','anniversary','note','task','custom','recharge','event','alarm','company') NOT NULL`,
+
+  // Lets a reminder be shared with other app users in addition to its owner -
+  // one row per recipient, so sending to a group is just inserting several
+  // rows for the same reminder_id. Used by the Company reminder form today,
+  // but deliberately not type-restricted so any reminder type could adopt it.
+  `CREATE TABLE IF NOT EXISTS reminder_recipients (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    reminder_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_reminder_recipient (reminder_id, user_id),
+    INDEX idx_reminder_recipients_user (user_id)
+  )`,
 
   `CREATE TABLE IF NOT EXISTS notes (
     id BIGINT PRIMARY KEY AUTO_RANDOM,
@@ -256,6 +265,116 @@ const statements = [
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`,
+
+  // Company -> Project -> Group -> Reminder hierarchy (business follow-ups).
+  // Each user manages their own companies; projects live under a company,
+  // groups (of other app users) live under a project, and reminders posted
+  // to a group notify every member (see reminders.group_id below).
+  `CREATE TABLE IF NOT EXISTS companies (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    notes VARCHAR(1000),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_companies_user (user_id)
+  )`,
+
+  // user_id is denormalized from companies.user_id (a project's owner is
+  // always its company's owner - no delegation at this level) so project
+  // queries stay a flat WHERE id=? AND user_id=? like the rest of this
+  // file, instead of a JOIN back to companies.
+  `CREATE TABLE IF NOT EXISTS projects (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    company_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    notes VARCHAR(1000),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_projects_company (company_id)
+  )`,
+
+  // Named reminder_groups, not "groups" - GROUPS is a reserved word in
+  // MySQL 8.0.19+/TiDB. No description column - the task content lives on
+  // the reminders inside the group, not on the group itself.
+  `CREATE TABLE IF NOT EXISTS reminder_groups (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    project_id BIGINT NOT NULL,
+    created_by BIGINT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    creator_self_reminder BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_reminder_groups_project (project_id)
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS reminder_group_members (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_reminder_group_member (group_id, user_id),
+    INDEX idx_reminder_group_members_user (user_id)
+  )`,
+
+  // Superseded by reminder_group_restrictions below (every member manages
+  // reminders by default now, not just whoever's granted) - left in place
+  // unused rather than dropped, since nothing in this file ever drops a
+  // table and no real data was ever written here.
+  `CREATE TABLE IF NOT EXISTS reminder_group_permissions (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    granted_by BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_reminder_group_permission (group_id, user_id),
+    INDEX idx_reminder_group_permissions_user (user_id)
+  )`,
+
+  // Every group member has full manage rights (create/edit/delete/complete/
+  // add-update) on the group's reminders by default - presence of a row
+  // here is the exception, not the rule: it means the creator has switched
+  // that one member's access off. The creator themself is never restricted
+  // (enforced in reminder-groups.service.js, not here - no FK in this schema).
+  `CREATE TABLE IF NOT EXISTS reminder_group_restrictions (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    restricted_by BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_reminder_group_restriction (group_id, user_id),
+    INDEX idx_reminder_group_restrictions_user (user_id)
+  )`,
+
+  // Append-only work-log for a group reminder - the reminder's own
+  // description is written once at creation and never overwritten again;
+  // every later progress note is a new row here, attributed + dated,
+  // rather than silently replacing what was already written.
+  `CREATE TABLE IF NOT EXISTS reminder_updates (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    reminder_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    note VARCHAR(1000) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_reminder_updates_reminder (reminder_id, id)
+  )`,
+
+  // Set when a reminder belongs to a reminder_groups row. Recipients are
+  // then derived dynamically from reminder_group_members at notify time
+  // (see reminders.scheduler.js) instead of reminder_recipients.
+  `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS group_id BIGINT NULL`,
+
+  // Set when a reminder is a Project "Task" - delegated to exactly one
+  // person via the existing generic reminder_recipients mechanism (clamped
+  // to a single entry in reminders.service.js) rather than a whole Group.
+  `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS project_id BIGINT NULL`,
+
+  // Whether the reminder's own owner wants to be alarmed too, not just any
+  // recipients it was shared with (see reminder_recipients) - generic on
+  // the table, same as recipient_mobile/wish_message, though today only
+  // the Business Notes form (type='note') surfaces the toggle for it.
+  `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS self_reminder BOOLEAN NOT NULL DEFAULT TRUE`,
 ];
 
 const migrate = async () => {

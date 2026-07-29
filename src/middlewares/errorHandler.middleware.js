@@ -12,6 +12,8 @@ const DUPLICATE_FIELD_MESSAGES = {
   mobile: 'This mobile number is already registered.',
   google_id: 'This Google account is already linked to another user.',
   uq_device_token: 'That device is already registered.',
+  uq_reminder_group_member: 'This person is already a member of the group.',
+  uq_reminder_group_restriction: 'This person is already restricted.',
 };
 
 // TiDB (unlike upstream MySQL) sometimes reports the offending value as a

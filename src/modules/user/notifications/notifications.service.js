@@ -89,7 +89,18 @@ const pushEnabledFor = async (userId, column) => {
 // something" nudge.
 export const notifyReminderDue = async (
   userId,
-  { title, body, referenceId, reminderType, recipientName, recipientMobile, wishMessage, voiceMessage }
+  {
+    title,
+    body,
+    referenceId,
+    reminderType,
+    recipientName,
+    recipientMobile,
+    wishMessage,
+    voiceMessage,
+    groupId,
+    projectId,
+  }
 ) => {
   const notification = await insertNotification({ userId, type: 'reminder', title, body, referenceId });
 
@@ -103,6 +114,9 @@ export const notifyReminderDue = async (
       // there's no way to auto-send through the real WhatsApp app.
       // voiceMessage is read aloud on-device once the notification's own
       // alert sound finishes (see _layout.js's notification-received handler).
+      // groupId/projectId are only set for Group reminders / Project Tasks -
+      // the app's notification-tap handler uses their presence to route to
+      // that screen instead of the generic reminder-by-type screen.
       data: {
         type: 'reminder',
         reminderId: referenceId,
@@ -111,11 +125,30 @@ export const notifyReminderDue = async (
         recipientMobile,
         wishMessage,
         voiceMessage,
+        groupId,
+        projectId,
       },
     });
   }
 
   return notification;
+};
+
+// Called right after a Group reminder or Project Task is created (to notify
+// the other members/the assignee immediately, not just at the due-date
+// alarm) and whenever someone posts a work-log update on a group reminder -
+// unlike notifyReminderDue this always fans out to a list of users at once.
+export const notifyGroupReminderEvent = async (userIds, { title, body, referenceId, groupId, projectId }) => {
+  for (const userId of userIds) {
+    await insertNotification({ userId, type: 'reminder', title, body, referenceId });
+    if (await pushEnabledFor(userId, 'reminder_notifications')) {
+      await sendExpoPush(userId, {
+        title,
+        body,
+        data: { type: 'reminder', reminderId: referenceId, reminderType: groupId ? 'company' : 'task', groupId, projectId },
+      });
+    }
+  }
 };
 
 // --- device tokens (Expo push) ---

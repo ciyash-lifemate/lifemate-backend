@@ -54,3 +54,13 @@ export const deleteReminder = asyncHandler(async (req, res) => {
   await remindersService.deleteReminder(req.params.id, req.userId);
   sendSuccess(res, { message: 'Reminder deleted' });
 });
+
+export const getReminderUpdates = asyncHandler(async (req, res) => {
+  const updates = await remindersService.listReminderUpdates(req.params.id, req.userId);
+  sendSuccess(res, { data: updates });
+});
+
+export const addReminderUpdate = asyncHandler(async (req, res) => {
+  const updates = await remindersService.addReminderUpdate(req.params.id, req.userId, req.body.note);
+  sendSuccess(res, { statusCode: 201, data: updates });
+});
