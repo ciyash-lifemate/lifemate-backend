@@ -442,6 +442,15 @@ const statements = [
   // already exist in the data, same reasoning as the reminders.type widen
   // above.
   `ALTER TABLE notifications MODIFY COLUMN type ENUM('reminder','chat','system','family','nudge') NOT NULL DEFAULT 'system'`,
+
+  // Which bundled Android notification channel/sound a user wants reminder
+  // pushes to play. Values must match a channel the mobile app actually
+  // creates (src/utils/notifications.js) - 'default' (system sound) or
+  // 'alert' (assets/reminder-alert.wav, bundled via the expo-notifications
+  // config plugin at build time). Not an open-ended picker: Android can only
+  // play a sound that was compiled into the app, never an arbitrary file
+  // from the user's own device.
+  `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS notification_sound VARCHAR(30) NOT NULL DEFAULT 'default'`,
 ];
 
 const migrate = async () => {

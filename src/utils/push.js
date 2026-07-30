@@ -9,6 +9,14 @@ const expo = new Expo({ accessToken: env.expo.accessToken });
 // (see modules/user/notifications for the register/unregister endpoints).
 // Fire-and-forget from the caller's point of view - a push failure should
 // never fail the request that triggered it (e.g. a reminder falling due).
+// Which bundled Android channel to push through, per the user's
+// notification_sound setting (see settings module) - must match a channel
+// id the mobile app actually creates (src/utils/notifications.js). Falls
+// back to the default channel for anything unrecognized, same as the
+// column's own DB default.
+const channelIdFor = (notificationSound) =>
+  notificationSound === 'alert' ? 'reminders-v3-alert' : 'reminders-v3-default';
+
 export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   const [rows] = await pool.query('SELECT expo_push_token FROM device_tokens WHERE user_id = ?', [
     userId,
@@ -17,11 +25,14 @@ export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   const tokens = rows.map((r) => r.expo_push_token).filter((t) => Expo.isExpoPushToken(t));
   if (tokens.length === 0) return;
 
-  // channelId must match the Android channel the app actually created
-  // (src/utils/notifications.js) - a mismatch (or omitting it) can route the
-  // notification through Android's own default channel, which may have no
-  // sound configured.
-  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default', channelId: 'reminders-v3' }));
+  const [settingsRows] = await pool.query('SELECT notification_sound FROM user_settings WHERE user_id = ?', [
+    userId,
+  ]);
+  // channelId must match an Android channel the app actually created - a
+  // mismatch (or omitting it) can route the notification through Android's
+  // own default channel, which may have no sound configured.
+  const channelId = channelIdFor(settingsRows[0]?.notification_sound);
+  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default', channelId }));
   const chunks = expo.chunkPushNotifications(messages);
   const staleTokens = [];
 
