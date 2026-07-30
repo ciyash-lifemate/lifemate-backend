@@ -21,7 +21,7 @@ export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   // (src/utils/notifications.js) - a mismatch (or omitting it) can route the
   // notification through Android's own default channel, which may have no
   // sound configured.
-  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default', channelId: 'reminders-v2' }));
+  const messages = tokens.map((to) => ({ to, title, body, data, sound: 'default', channelId: 'reminders-v3' }));
   const chunks = expo.chunkPushNotifications(messages);
   const staleTokens = [];
 

@@ -13,6 +13,7 @@ import { companyRoutes } from '../modules/user/companies/companies.route.js';
 import { projectRoutes } from '../modules/user/projects/projects.route.js';
 import { reminderGroupRoutes } from '../modules/user/reminder-groups/reminder-groups.route.js';
 import { fitnessRoutes } from '../modules/user/fitness/fitness.route.js';
+import { familyRoutes } from '../modules/user/family/family.route.js';
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use('/companies', authenticateUser, companyRoutes);
 router.use('/projects', authenticateUser, projectRoutes);
 router.use('/reminder-groups', authenticateUser, reminderGroupRoutes);
 router.use('/fitness', authenticateUser, fitnessRoutes);
+router.use('/family', authenticateUser, familyRoutes);
 
 export const userRoutes = router;

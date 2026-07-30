@@ -404,6 +404,37 @@ const statements = [
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_fitness_logs_user_date (user_id, log_date)
   )`,
+
+  // Personal "Family Sharing" (Home -> Business -> Family Sharing) - a
+  // separate, simpler concept from reminder_groups above (which is scoped
+  // under a Company -> Project and only has a binary can_manage/restricted
+  // permission). A user creates at most one family group; members are
+  // invited by mobile number (must already be a registered user - there's
+  // no SMS/email delivery configured in this app to invite someone who
+  // isn't) and are added directly rather than going through a pending-
+  // accept step, same as reminder_group_members already works.
+  `CREATE TABLE IF NOT EXISTS family_groups (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    name VARCHAR(100) NOT NULL DEFAULT 'My Family',
+    created_by BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )`,
+
+  // permission is the ceiling on what this member can do with reminders
+  // shared to them via the existing generic reminder_recipients mechanism -
+  // 'view' (read only) < 'edit' (view+complete/edit) < 'add' (+ create new
+  // shared reminders) < 'full' (also manage members/settings, same as the
+  // creator). The creator is always inserted here too, with 'full'.
+  `CREATE TABLE IF NOT EXISTS family_group_members (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    permission ENUM('view','edit','add','full') NOT NULL DEFAULT 'view',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_family_member (group_id, user_id),
+    INDEX idx_family_members_user (user_id)
+  )`,
 ];
 
 const migrate = async () => {

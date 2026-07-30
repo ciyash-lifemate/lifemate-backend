@@ -20,9 +20,21 @@ const SHARED_VISIBILITY_CLAUSE = `
   OR id IN (SELECT reminder_id FROM reminder_recipients WHERE user_id = ?)
 `;
 
+// Same visibility rule as SHARED_VISIBILITY_CLAUSE below, just re-qualified
+// with the r./u. aliases this query needs for its creator-name join - kept
+// as a literal string rather than derived from that constant, since a
+// mechanical find/replace on column names too easily corrupts an unrelated
+// identifier that happens to contain the same substring (e.g. "user_id").
 const findReminderById = async (id, userId) => {
   const [rows] = await pool.query(
-    `SELECT * FROM reminders WHERE id = ? AND is_active = TRUE AND (user_id = ? ${SHARED_VISIBILITY_CLAUSE})`,
+    `SELECT r.*, u.name AS creator_name, u.avatar_url AS creator_avatar_url
+     FROM reminders r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.id = ? AND r.is_active = TRUE AND (
+       r.user_id = ?
+       OR r.group_id IN (SELECT group_id FROM reminder_group_members WHERE user_id = ?)
+       OR r.id IN (SELECT reminder_id FROM reminder_recipients WHERE user_id = ?)
+     )`,
     [id, userId, userId, userId]
   );
   if (!rows[0]) return rows[0];
