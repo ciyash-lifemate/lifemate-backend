@@ -8,6 +8,7 @@ class ApiError extends Error {
 }
 import { notifyReminderCreated, notifyGroupReminderEvent } from '../notifications/notifications.service.js';
 import { canManageGroup } from '../reminder-groups/reminder-groups.service.js';
+import { canManageViaFamily } from '../family/family.service.js';
 
 // A reminder is visible to its owner, plus: every member of its Group (see
 // reminders.group_id / reminder_group_members), and anyone it was
@@ -88,11 +89,14 @@ const setRecipients = async (reminderId, userId, userIds) => {
 
 // Who's allowed to edit/delete/complete a reminder, or add a work-log
 // update to it: the reminder's own creator, or - for a group reminder -
-// the group's creator or anyone the group creator granted manage rights to.
+// the group's creator or anyone the group creator granted manage rights to,
+// or - for a reminder shared one-to-one via reminder_recipients (e.g. the
+// Family Sharing feature) - a fellow family member with "edit" permission
+// or higher over the creator.
 const canManageReminder = async (reminder, userId) => {
   if (String(reminder.user_id) === String(userId)) return true;
-  if (!reminder.group_id) return false;
-  return canManageGroup(reminder.group_id, userId);
+  if (reminder.group_id) return canManageGroup(reminder.group_id, userId);
+  return canManageViaFamily(reminder.user_id, userId);
 };
 
 const requireManage = async (reminder, userId) => {

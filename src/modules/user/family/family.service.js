@@ -58,6 +58,22 @@ const requirePermission = (membership, minPermission) => {
   }
 };
 
+// Exported for reminders.service.js's canManageReminder - a family member
+// with "edit" permission or higher can manage a reminder a fellow member
+// created and shared with them (via the existing generic reminder_recipients
+// mechanism), not just view it. "view"/"add" members still can't - "add"
+// only covers creating their own new shared reminders, not editing others'.
+export const canManageViaFamily = async (creatorUserId, userId) => {
+  const [rows] = await pool.query(
+    `SELECT m2.permission FROM family_group_members m1
+     JOIN family_group_members m2 ON m2.group_id = m1.group_id
+     WHERE m1.user_id = ? AND m2.user_id = ?`,
+    [creatorUserId, userId]
+  );
+  const permission = rows[0]?.permission;
+  return permission ? PERMISSION_RANK[permission] >= PERMISSION_RANK.edit : false;
+};
+
 // --- group ---
 
 export const getMyGroup = async (userId) => {
