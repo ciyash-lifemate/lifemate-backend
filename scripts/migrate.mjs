@@ -435,6 +435,13 @@ const statements = [
     UNIQUE KEY uq_family_member (group_id, user_id),
     INDEX idx_family_members_user (user_id)
   )`,
+
+  // Widen to cover the family-invite notification (already shipped using
+  // 'family') and the new LifeMate Contacts "nudge" bell. MODIFY COLUMN is
+  // safe to re-run as long as it's always a superset of whatever types
+  // already exist in the data, same reasoning as the reminders.type widen
+  // above.
+  `ALTER TABLE notifications MODIFY COLUMN type ENUM('reminder','chat','system','family','nudge') NOT NULL DEFAULT 'system'`,
 ];
 
 const migrate = async () => {

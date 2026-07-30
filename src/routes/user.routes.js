@@ -14,6 +14,7 @@ import { projectRoutes } from '../modules/user/projects/projects.route.js';
 import { reminderGroupRoutes } from '../modules/user/reminder-groups/reminder-groups.route.js';
 import { fitnessRoutes } from '../modules/user/fitness/fitness.route.js';
 import { familyRoutes } from '../modules/user/family/family.route.js';
+import { contactsRoutes } from '../modules/user/contacts/contacts.route.js';
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use('/projects', authenticateUser, projectRoutes);
 router.use('/reminder-groups', authenticateUser, reminderGroupRoutes);
 router.use('/fitness', authenticateUser, fitnessRoutes);
 router.use('/family', authenticateUser, familyRoutes);
+router.use('/contacts', authenticateUser, contactsRoutes);
 
 export const userRoutes = router;
