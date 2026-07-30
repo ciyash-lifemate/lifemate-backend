@@ -375,6 +375,35 @@ const statements = [
   // the table, same as recipient_mobile/wish_message, though today only
   // the Business Notes form (type='note') surfaces the toggle for it.
   `ALTER TABLE reminders ADD COLUMN IF NOT EXISTS self_reminder BOOLEAN NOT NULL DEFAULT TRUE`,
+
+  // One row per user per day (see modules/user/fitness) - the "Add Fitness"
+  // screen always submits the whole day's form at once, so a day is either
+  // fully unlogged or has one full row, never several partial ones.
+  // `exercises` is a JSON array of {name, durationMinutes, calories,
+  // distanceKm} the same way reminders.checklist_items works above - not
+  // every exercise reports the same metrics, so a rigid child table would
+  // need most of its columns nullable anyway.
+  `CREATE TABLE IF NOT EXISTS fitness_logs (
+    id BIGINT PRIMARY KEY AUTO_RANDOM,
+    user_id BIGINT NOT NULL,
+    log_date DATE NOT NULL,
+    mood ENUM('lazy','average','good','great','excellent') NULL,
+    steps INT NULL,
+    calories INT NULL,
+    workout_minutes INT NULL,
+    active_calories INT NULL,
+    distance_km DECIMAL(6,2) NULL,
+    floors_climbed INT NULL,
+    weight_kg DECIMAL(5,2) NULL,
+    body_fat_percent DECIMAL(4,1) NULL,
+    water_intake_liters DECIMAL(4,2) NULL,
+    sleep_hours DECIMAL(4,2) NULL,
+    exercises JSON NULL,
+    notes VARCHAR(1000) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_fitness_logs_user_date (user_id, log_date)
+  )`,
 ];
 
 const migrate = async () => {
