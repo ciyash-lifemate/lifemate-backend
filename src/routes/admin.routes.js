@@ -15,3 +15,4 @@ router.use('/users', authenticateAdmin, adminUsersRoutes);
 router.use('/stats', authenticateAdmin, adminStatsRoutes);
 
 export const adminRoutes = router;
+      
