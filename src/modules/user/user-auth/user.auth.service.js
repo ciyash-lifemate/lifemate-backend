@@ -194,10 +194,11 @@ export const updateMyProfile = async (userId, { name, email, dateOfBirth, langua
 };
 
 export const searchUsers = async (query, currentUserId) => {
+  const trimmed = query.trim();
   const [rows] = await pool.query(
     `SELECT id, name, avatar_url FROM users
-     WHERE name LIKE ? AND id != ? LIMIT 20`,
-    [`%${query.trim()}%`, currentUserId]
+     WHERE (name LIKE ? OR mobile LIKE ?) AND id != ? LIMIT 20`,
+    [`%${trimmed}%`, `%${trimmed}%`, currentUserId]
   );
   return rows;
 };

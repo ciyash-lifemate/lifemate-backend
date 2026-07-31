@@ -78,13 +78,24 @@ const isReminderRecipient = async (reminderId, userId) => {
   return Boolean(rows[0]);
 };
 
+// A personal reminder's "also remind" picker is capped at 5 people (mirrors
+// the mobile app's RecipientPicker default) so a Quick Add reminder can't
+// silently turn into a mass broadcast - enforced here too, not just in the
+// UI, since the create/update API is reachable directly. Company reminders
+// (see the `unlimited` flag from callers below) are a real business roster
+// and skip this - Joi's own recipientUserIds max(50) is the only bound there.
+const PERSONAL_RECIPIENT_LIMIT = 5;
+
 // Replaces the full recipient set rather than diffing it - callers always
 // pass the complete desired list (the recipient picker resends everyone
 // selected), so this stays a delete+insert instead of tracking adds/removes.
-const setRecipients = async (reminderId, userId, userIds) => {
+const setRecipients = async (reminderId, userId, userIds, { unlimited = false } = {}) => {
   if (userIds === undefined) return;
-  await pool.query('DELETE FROM reminder_recipients WHERE reminder_id = ?', [reminderId]);
   const uniqueIds = [...new Set(userIds || [])].filter((recipientId) => recipientId !== userId);
+  if (!unlimited && uniqueIds.length > PERSONAL_RECIPIENT_LIMIT) {
+    throw new ApiError(400, `You can add at most ${PERSONAL_RECIPIENT_LIMIT} recipients to this reminder.`);
+  }
+  await pool.query('DELETE FROM reminder_recipients WHERE reminder_id = ?', [reminderId]);
   if (!uniqueIds.length) return;
   await pool.query('INSERT INTO reminder_recipients (reminder_id, user_id) VALUES ?', [
     uniqueIds.map((recipientId) => [reminderId, recipientId]),
@@ -168,7 +179,9 @@ export const createReminder = async (
     ]
   );
 
-  if (!groupId) await setRecipients(result.insertId, userId, clampedRecipientIds);
+  if (!groupId) {
+    await setRecipients(result.insertId, userId, clampedRecipientIds, { unlimited: type === 'company' });
+  }
   const reminder = await findReminderById(result.insertId, userId);
   await notifyReminderCreated(userId, reminder);
 
@@ -316,7 +329,7 @@ export const updateReminder = async (
   if (!reminder.group_id) {
     // A Task still has at most one assignee on update, same as creation.
     const clampedRecipientIds = reminder.project_id ? recipientUserIds?.slice(0, 1) : recipientUserIds;
-    await setRecipients(id, userId, clampedRecipientIds);
+    await setRecipients(id, userId, clampedRecipientIds, { unlimited: reminder.type === 'company' });
   }
   // A group reminder's description is write-once - progress goes through
   // addReminderUpdate's append-only work-log instead of overwriting it.
