@@ -284,12 +284,25 @@ export const listReminders = async (
 // assumed to be in India for now; there's no per-user timezone field yet.
 const IST_OFFSET_SQL = 'NOW() + INTERVAL 330 MINUTE';
 
+// Deliberately narrower than SHARED_VISIBILITY_CLAUSE - a reminder someone
+// else shared with you (via the generic "also remind" picker/Family
+// Sharing, not a Group) still reaches you as its own due-time push/local
+// notification (see notifyReminderShared and localReminders.js, both driven
+// off the full listReminders instead), but showing it as a standing item in
+// *your* Home "Today's Reminders" alongside your own read as "why is
+// someone else's reminder cluttering my list" - it's not something you're
+// meant to go do, just something you'll be told about when it happens.
+// Group reminders are still included: those are more like a shared team
+// task list than a one-off nudge, so seeing them ahead of time is the point.
 export const listTodayReminders = async (userId) => {
   const [rows] = await pool.query(
     `SELECT * FROM reminders
-     WHERE (user_id = ? ${SHARED_VISIBILITY_CLAUSE}) AND is_active = TRUE AND reminder_date = DATE(${IST_OFFSET_SQL})
+     WHERE (
+       user_id = ?
+       OR group_id IN (SELECT group_id FROM reminder_group_members WHERE user_id = ?)
+     ) AND is_active = TRUE AND reminder_date = DATE(${IST_OFFSET_SQL})
      ORDER BY reminder_time ASC`,
-    [userId, userId, userId]
+    [userId, userId]
   );
   return rows;
 };

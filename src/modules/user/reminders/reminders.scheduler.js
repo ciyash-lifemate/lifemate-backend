@@ -2,7 +2,12 @@ import * as remindersService from './reminders.service.js';
 import { notifyReminderDue } from '../notifications/notifications.service.js';
 import { logger } from '../../../utils/logger.js';
 
-const CHECK_INTERVAL_MS = 15_000;
+// Was 15s - tightened since this is the only path a reminder shared with
+// someone else fires through (their device can't schedule a local alarm on
+// its own, see the comment on targetUserIds below), so this poll gap was
+// direct, felt delay on top of push delivery latency, not just internal
+// bookkeeping slack.
+const CHECK_INTERVAL_MS = 5_000;
 
 const EMOJI_BY_TYPE = {
   medicine: '💊',

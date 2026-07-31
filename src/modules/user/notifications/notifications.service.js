@@ -18,20 +18,49 @@ const insertNotification = async ({ userId, type, title, body, referenceId }) =>
   return rows[0];
 };
 
+// Every 'reminder'-type row's reference_id points at a reminders.id (see
+// insertNotification callers below) - joined here so the list can show who
+// it's actually from (reminder.user_id's name) and split by what the
+// underlying reminder actually is, without a separate column tracking any
+// of that on the notification row itself:
+//   - sent: this user is the reminder's own creator AND it has recipients
+//     (a plain reminder they only made for themselves still gets a
+//     "Reminder created" notification via notifyReminderCreated below, but
+//     that's not what "Sent Reminders" means - only ones actually shared)
+//   - received: someone else created the reminder this notification is about
+const FROM_JOIN = `
+  LEFT JOIN reminders r ON n.type = 'reminder' AND r.id = n.reference_id
+  LEFT JOIN users ru ON ru.id = r.user_id
+`;
+const SENT_CONDITION = `r.user_id = n.user_id AND (
+  r.group_id IS NOT NULL OR EXISTS (SELECT 1 FROM reminder_recipients WHERE reminder_id = r.id)
+)`;
+
 export const listNotifications = async (userId, { type, page = 1, pageSize = 30 } = {}) => {
   const params = [userId];
-  let where = 'WHERE user_id = ?';
-  if (type && type !== 'all') {
-    where += ' AND type = ?';
+  let where = 'WHERE n.user_id = ?';
+  if (type === 'sent') {
+    where += ` AND n.type = 'reminder' AND ${SENT_CONDITION}`;
+  } else if (type === 'received') {
+    where += " AND n.type = 'reminder' AND r.user_id IS NOT NULL AND r.user_id != n.user_id";
+  } else if (type && type !== 'all') {
+    where += ' AND n.type = ?';
     params.push(type);
   }
 
   const offset = (page - 1) * pageSize;
   const [rows] = await pool.query(
-    `SELECT * FROM notifications ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT n.*, r.type AS reminder_type, r.group_id AS reminder_group_id, r.project_id AS reminder_project_id,
+            r.reminder_date AS reminder_date, r.reminder_time AS reminder_time, ru.name AS from_name
+     FROM notifications n
+     ${FROM_JOIN}
+     ${where} ORDER BY n.created_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset]
   );
-  const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM notifications ${where}`, params);
+  const [[{ total }]] = await pool.query(
+    `SELECT COUNT(*) AS total FROM notifications n ${FROM_JOIN} ${where}`,
+    params
+  );
   return { items: rows, total: Number(total), page, pageSize };
 };
 

@@ -2,7 +2,11 @@ import Joi from 'joi';
 import { validate } from '../../../middlewares/validate.middleware.js';
 
 const listNotificationsSchema = Joi.object({
-  type: Joi.string().valid('all', 'reminder', 'system').default('all'),
+  // 'sent'/'received' resolve against the reminder a type: 'reminder'
+  // notification points to (see the join in notifications.service.js's
+  // listNotifications) - 'sent' is one this user created and shared with
+  // someone else, 'received' is one someone else shared with this user.
+  type: Joi.string().valid('all', 'reminder', 'system', 'sent', 'received').default('all'),
   page: Joi.number().integer().min(1).default(1),
   pageSize: Joi.number().integer().min(1).max(100).default(30),
 });

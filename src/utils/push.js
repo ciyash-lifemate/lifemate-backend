@@ -13,9 +13,17 @@ const expo = new Expo({ accessToken: env.expo.accessToken });
 // notification_sound setting (see settings module) - must match a channel
 // id the mobile app actually creates (src/utils/notifications.js). Falls
 // back to the default channel for anything unrecognized, same as the
-// column's own DB default.
-const channelIdFor = (notificationSound) =>
-  notificationSound === 'alert' ? 'reminders-v3-alert' : 'reminders-v3-default';
+// column's own DB default. 'default'/'alert' keep their original v3 ids
+// (channels are immutable once created on-device, so an already-installed
+// app's existing channels must keep resolving the same way); every sound
+// added after that lives under a new v4 prefix instead of touching those.
+const V4_SOUND_IDS = ['bell', 'bells', 'pop', 'confirm', 'positive', 'doorbell', 'digital', 'magic', 'clear', 'urgent'];
+
+const channelIdFor = (notificationSound) => {
+  if (notificationSound === 'alert') return 'reminders-v3-alert';
+  if (V4_SOUND_IDS.includes(notificationSound)) return `reminders-v4-${notificationSound}`;
+  return 'reminders-v3-default';
+};
 
 export const sendExpoPush = async (userId, { title, body, data } = {}) => {
   const [rows] = await pool.query('SELECT expo_push_token FROM device_tokens WHERE user_id = ?', [
