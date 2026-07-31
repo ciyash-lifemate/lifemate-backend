@@ -151,6 +151,36 @@ export const notifyGroupReminderEvent = async (userIds, { title, body, reference
   }
 };
 
+// Called right after a reminder is created with individual recipients (any
+// type, via the generic reminder_recipients mechanism - Family Sharing, the
+// "also remind" picker, a Project Task's single assignee) so they're
+// notified immediately, not just at the due-date alarm. Unlike
+// notifyGroupReminderEvent this passes the reminder's own real type instead
+// of assuming task/company, so the mobile tap-handler routes to the right
+// screen (this path never actually has group_id set, but project_id can be).
+export const notifyReminderShared = async (userIds, reminder) => {
+  for (const userId of userIds) {
+    const title = reminder.title;
+    const body = 'Shared a reminder with you';
+    await insertNotification({ userId, type: 'reminder', title, body, referenceId: reminder.id });
+    if (await pushEnabledFor(userId, 'reminder_notifications')) {
+      await sendExpoPush(userId, {
+        title,
+        body,
+        data: {
+          type: 'reminder',
+          reminderId: reminder.id,
+          reminderType: reminder.type,
+          recipientMobile: reminder.recipient_mobile,
+          wishMessage: reminder.wish_message,
+          voiceMessage: reminder.voice_message,
+          projectId: reminder.project_id,
+        },
+      });
+    }
+  }
+};
+
 // --- device tokens (Expo push) ---
 
 export const registerDeviceToken = async (userId, token, platform) => {

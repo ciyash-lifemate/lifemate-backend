@@ -6,7 +6,11 @@ class ApiError extends Error {
     this.statusCode = statusCode;
   }
 }
-import { notifyReminderCreated, notifyGroupReminderEvent } from '../notifications/notifications.service.js';
+import {
+  notifyReminderCreated,
+  notifyGroupReminderEvent,
+  notifyReminderShared,
+} from '../notifications/notifications.service.js';
 import { canManageGroup } from '../reminder-groups/reminder-groups.service.js';
 import { canManageViaFamily } from '../family/family.service.js';
 
@@ -195,17 +199,17 @@ export const createReminder = async (
       projectId,
     });
   } else if (!projectId) {
-    // Plain shared reminder (e.g. a Business Note) - notify whoever it was
-    // actually saved with (setRecipients already deduped and dropped the
-    // owner) right away, same as Group/Task above, instead of only ever
-    // reaching them via the due-date alarm.
+    // Plain shared reminder (Family Sharing, the generic "also remind"
+    // picker, a Business Note) - notify whoever it was actually saved with
+    // (setRecipients already deduped and dropped the owner) right away,
+    // same as Group/Task above, instead of only ever reaching them via the
+    // due-date alarm. notifyReminderShared, not notifyGroupReminderEvent -
+    // that one hardcodes reminderType to 'task' whenever groupId is absent,
+    // which sent every plain shared reminder's tap to the Tasks screen
+    // regardless of its real type.
     const savedRecipientIds = await getRecipientUserIds(reminder.id);
     if (savedRecipientIds.length) {
-      await notifyGroupReminderEvent(savedRecipientIds, {
-        title: reminder.title,
-        body: 'Shared a reminder with you',
-        referenceId: reminder.id,
-      });
+      await notifyReminderShared(savedRecipientIds, reminder);
     }
   }
 
