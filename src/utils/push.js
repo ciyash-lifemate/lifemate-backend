@@ -19,9 +19,16 @@ const expo = new Expo({ accessToken: env.expo.accessToken });
 // added after that lives under a new v4 prefix instead of touching those.
 const V4_SOUND_IDS = ['bell', 'bells', 'pop', 'confirm', 'positive', 'doorbell', 'digital', 'magic', 'clear', 'urgent'];
 
+// A sound picked from the user's own phone (see modules/reminder-sound)
+// stores its own channel id directly as notification_sound - that channel
+// was created on-device at pick time, so pushing through it just means
+// passing this value straight through instead of looking it up.
+const CUSTOM_CHANNEL_PREFIX = 'reminders-custom-';
+
 const channelIdFor = (notificationSound) => {
   if (notificationSound === 'alert') return 'reminders-v3-alert';
   if (V4_SOUND_IDS.includes(notificationSound)) return `reminders-v4-${notificationSound}`;
+  if (notificationSound?.startsWith(CUSTOM_CHANNEL_PREFIX)) return notificationSound;
   return 'reminders-v3-default';
 };
 

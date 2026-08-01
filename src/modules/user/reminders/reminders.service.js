@@ -242,7 +242,11 @@ export const listReminders = async (
   { type, from, to, groupId, projectId, page = 1, pageSize = 50 } = {}
 ) => {
   const params = [userId, userId, userId];
-  let where = `WHERE (user_id = ? ${SHARED_VISIBILITY_CLAUSE}) AND is_active = TRUE`;
+  // Business Notes ("Message") was removed as a feature - existing type:
+  // 'note' rows are left in place rather than deleted (nothing points at
+  // their own screen anymore either way), but every listing excludes them
+  // so they don't show up as dead rows nothing can open.
+  let where = `WHERE (user_id = ? ${SHARED_VISIBILITY_CLAUSE}) AND is_active = TRUE AND type != 'note'`;
 
   if (groupId) {
     // Scoped to one group's reminders (e.g. the Group detail screen) -
@@ -300,7 +304,7 @@ export const listTodayReminders = async (userId) => {
      WHERE (
        user_id = ?
        OR group_id IN (SELECT group_id FROM reminder_group_members WHERE user_id = ?)
-     ) AND is_active = TRUE AND reminder_date = DATE(${IST_OFFSET_SQL})
+     ) AND is_active = TRUE AND type != 'note' AND reminder_date = DATE(${IST_OFFSET_SQL})
      ORDER BY reminder_time ASC`,
     [userId, userId]
   );
@@ -458,6 +462,7 @@ export const listDueReminders = async () => {
     `SELECT * FROM reminders
      WHERE is_active = TRUE
        AND is_completed = FALSE
+       AND type != 'note'
        AND (last_notified_date IS NULL OR last_notified_date < DATE(${IST_OFFSET_SQL}))
        AND (reminder_time IS NULL OR reminder_time <= TIME(${IST_OFFSET_SQL}))
        AND (

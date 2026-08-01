@@ -80,8 +80,23 @@ const checkDueReminders = async () => {
   }
 };
 
+// Guards against overlapping ticks: checkDueReminders only marks a reminder
+// notified (markReminderNotified) after its push(es) finish sending, so if
+// one tick is still mid-flight when the next setInterval fires (a slow push
+// to the Expo API, or several reminders due in the same tick), the next
+// tick's listDueReminders() would see the same still-unmarked reminder as
+// due again and send a second, duplicate push. This is what showed up as a
+// reminder notifying more than once.
+let isRunning = false;
+
 const tick = () => {
-  checkDueReminders().catch((err) => logger.error('Reminder scheduler tick failed', { message: err.message }));
+  if (isRunning) return;
+  isRunning = true;
+  checkDueReminders()
+    .catch((err) => logger.error('Reminder scheduler tick failed', { message: err.message }))
+    .finally(() => {
+      isRunning = false;
+    });
 };
 
 export const startReminderScheduler = () => {
