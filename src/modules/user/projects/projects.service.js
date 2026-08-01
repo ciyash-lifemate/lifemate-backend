@@ -9,8 +9,21 @@ class ApiError extends Error {
   }
 }
 
+// Same correlated-subquery approach as companies.service.js's
+// COMPANY_COUNTS_SELECT, for the same reason (two independent counts, no
+// row-multiplying JOIN needed). "Tasks" here means Project Tasks
+// (reminders.project_id set directly) - not group reminders, which use
+// group_id instead and are what group_count already covers separately.
+const PROJECT_COUNTS_SELECT = `
+  (SELECT COUNT(*) FROM reminder_groups WHERE project_id = p.id) AS group_count,
+  (SELECT COUNT(*) FROM reminders WHERE project_id = p.id AND is_active = TRUE) AS task_count
+`;
+
 const findProjectById = async (id, userId) => {
-  const [rows] = await pool.query('SELECT * FROM projects WHERE id = ? AND user_id = ?', [id, userId]);
+  const [rows] = await pool.query(
+    `SELECT p.*, ${PROJECT_COUNTS_SELECT} FROM projects p WHERE p.id = ? AND p.user_id = ?`,
+    [id, userId]
+  );
   return rows[0];
 };
 
@@ -31,7 +44,7 @@ export const createProject = async (userId, { companyId, name, notes }) => {
 export const listProjects = async (userId, companyId) => {
   await assertCompanyOwned(companyId, userId);
   const [rows] = await pool.query(
-    'SELECT * FROM projects WHERE company_id = ? AND user_id = ? ORDER BY name ASC',
+    `SELECT p.*, ${PROJECT_COUNTS_SELECT} FROM projects p WHERE p.company_id = ? AND p.user_id = ? ORDER BY p.name ASC`,
     [companyId, userId]
   );
   return rows;
