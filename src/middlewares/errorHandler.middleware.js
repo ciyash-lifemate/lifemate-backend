@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
 
 const sendError = (res, { statusCode = 500, message } = {}) => {
   res.status(statusCode).json({ success: false, message });
@@ -12,6 +13,7 @@ const DUPLICATE_FIELD_MESSAGES = {
   mobile: 'This mobile number is already registered.',
   google_id: 'This Google account is already linked to another user.',
   uq_device_token: 'That device is already registered.',
+  uq_chat_participant: 'That chat already exists.',
   uq_reminder_group_member: 'This person is already a member of the group.',
   uq_reminder_group_restriction: 'This person is already restricted.',
 };
@@ -33,6 +35,13 @@ export const errorHandler = (err, req, res, next) => {
 
     if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
       return sendError(res, { statusCode: 409, message: duplicateEntryMessage(err) });
+    }
+    if (err.name === 'MulterError') {
+      const message =
+        err.code === 'LIMIT_FILE_SIZE'
+          ? `File is too large (max ${env.upload.maxSizeMb} MB).`
+          : 'File upload failed.';
+      return sendError(res, { statusCode: 400, message });
     }
     return sendError(res, { statusCode: 500, message: 'Internal server error' });
   }

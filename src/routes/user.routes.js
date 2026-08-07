@@ -15,6 +15,8 @@ import { reminderGroupRoutes } from '../modules/user/reminder-groups/reminder-gr
 import { fitnessRoutes } from '../modules/user/fitness/fitness.route.js';
 import { familyRoutes } from '../modules/user/family/family.route.js';
 import { contactsRoutes } from '../modules/user/contacts/contacts.route.js';
+import { chatRoutes } from '../modules/user/chats/chats.route.js';
+import { uploadRoutes } from '../modules/user/uploads/uploads.route.js';
 
 const router = Router();
 
@@ -38,5 +40,8 @@ router.use('/reminder-groups', authenticateUser, reminderGroupRoutes);
 router.use('/fitness', authenticateUser, fitnessRoutes);
 router.use('/family', authenticateUser, familyRoutes);
 router.use('/contacts', authenticateUser, contactsRoutes);
+router.use('/chats', authenticateUser, chatRoutes);
+router.use('/uploads', authenticateUser, uploadRoutes);
 
 export const userRoutes = router;
+   

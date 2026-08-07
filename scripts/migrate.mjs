@@ -147,6 +147,17 @@ const statements = [
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // The original schema put both sides of a 1:1 chat on the chats row itself.
+  // chat_participants is the real source of truth now (it's what group chat
+  // will need), but existing databases still carry these two columns as
+  // NOT NULL, which breaks any INSERT that doesn't mention them. Recreated
+  // here as nullable so fresh and existing databases agree, and so a group
+  // chat can leave them empty.
+  `ALTER TABLE chats ADD COLUMN IF NOT EXISTS user_one_id BIGINT NULL`,
+  `ALTER TABLE chats ADD COLUMN IF NOT EXISTS user_two_id BIGINT NULL`,
+  `ALTER TABLE chats MODIFY COLUMN user_one_id BIGINT NULL`,
+  `ALTER TABLE chats MODIFY COLUMN user_two_id BIGINT NULL`,
+
   `CREATE TABLE IF NOT EXISTS chat_participants (
     id BIGINT PRIMARY KEY AUTO_RANDOM,
     chat_id BIGINT NOT NULL,
@@ -204,9 +215,23 @@ const statements = [
   // mobile:src/constants/cardTemplates.js) the user picked for their card.
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS card_template VARCHAR(30) NULL`,
 
-  // Per-participant "clear chat" - hides everything up to this message id for
-  // that participant only, without touching the other participant's view or
-  // the rows themselves.
+  // Per-participant "clear chat" - hides everything sent before this instant
+  // for that participant only, without touching the other participant's view
+  // or the rows themselves.
+  //
+  // Timestamps, not message ids, and the same goes for last_read_at and for
+  // every ORDER BY on this table: ids here are AUTO_RANDOM, which puts random
+  // shard bits in the HIGH bits, so a row inserted later routinely gets a
+  // SMALLER id than one inserted before it. Ordering or comparing by id gives
+  // messages in arbitrary order and read/cleared markers that hide the wrong
+  // rows. TIMESTAMP(6) (microseconds) rather than plain TIMESTAMP so two
+  // messages in the same second still order deterministically.
+  `ALTER TABLE messages MODIFY COLUMN created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`,
+  `ALTER TABLE messages ADD INDEX IF NOT EXISTS idx_messages_chat_time (chat_id, created_at)`,
+  `ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS cleared_before_at TIMESTAMP(6) NULL`,
+  `ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMP(6) NULL`,
+  // Superseded by the two columns above; left in place rather than dropped so
+  // an older running instance doesn't start failing inserts mid-deploy.
   `ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS cleared_before_message_id BIGINT NULL`,
 
   // "Delete for me" - hides one message for one participant only, unlike
@@ -255,6 +280,13 @@ const statements = [
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_ai_messages_user (user_id, id)
   )`,
+
+  // Same AUTO_RANDOM problem as messages above - ids don't ascend with
+  // insertion time, so the assistant's conversation history has to be ordered
+  // by created_at, at microsecond precision (a question and its answer are
+  // written in the same second).
+  `ALTER TABLE ai_messages MODIFY COLUMN created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`,
+  `ALTER TABLE ai_messages ADD INDEX IF NOT EXISTS idx_ai_messages_user_time (user_id, created_at)`,
 
   `CREATE TABLE IF NOT EXISTS user_settings (
     id BIGINT PRIMARY KEY AUTO_RANDOM,

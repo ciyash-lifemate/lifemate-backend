@@ -21,6 +21,17 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Chat media (images/videos/audio/documents) - see modules/user/uploads.
+  // crossOriginResourcePolicy is relaxed for this path only: helmet's default
+  // "same-origin" makes the phone's <Image>/<Video> fetch of these files fail,
+  // since the app is not served from this origin.
+  app.use(
+    '/uploads',
+    express.static(env.upload.dir, {
+      setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
+    })
+  );
+
   app.use('/api/v1', apiRoutes);
 
   app.use(notFound);

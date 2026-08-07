@@ -42,10 +42,41 @@ export const env = {
     debugExposeOtp: process.env.DEBUG_OTP === 'true',
   },
 
+  upload: {
+    dir: process.env.UPLOAD_DIR || 'uploads',
+    maxSizeMb: Number(process.env.UPLOAD_MAX_MB) || 50,
+    // Optional. Empty means "return a relative /uploads/... path and let the
+    // client resolve it against the API origin it already uses" - which is
+    // what a phone needs, since a hardcoded localhost/LAN IP breaks the moment
+    // the app runs anywhere but this machine. Set it only when media lives on
+    // a different origin than the API (a CDN or object store).
+    publicBaseUrl: process.env.UPLOAD_PUBLIC_BASE_URL || '',
+  },
+
+  socket: {
+    // Comma-separated list, e.g. "https://app.example.com,exp://192.168.1.5:8081".
+    // Left as "*" (Socket.IO's own default) for local/Expo Go development.
+    corsOrigin: process.env.SOCKET_CORS_ORIGIN ? process.env.SOCKET_CORS_ORIGIN.split(',') : '*',
+  },
+
+  chat: {
+    // Base64-encoded 32 bytes, for AES-256-GCM of message content at rest.
+    // Empty is allowed and means "store plaintext" (utils/messageCrypto.js
+    // warns at boot) so a dev instance without the key still runs.
+    encryptionKey: process.env.CHAT_ENCRYPTION_KEY || '',
+  },
+
   expo: {
     // Only needed if "Enhanced Security for Push Notifications" is enabled
     // on the Expo account - undefined is a valid, working config otherwise.
     accessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
+  },
+
+  gemini: {
+    // Not required(): an empty key is a valid config that makes ai-chat fall
+    // back to the rule-based parser instead of taking the whole server down.
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
   },
 };
    

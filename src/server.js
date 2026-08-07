@@ -2,6 +2,7 @@ import http from 'node:http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { testConnection } from './config/db.js';
+import { initSocket } from './realtime/socket.js';
 import { startReminderScheduler } from './modules/user/reminders/reminders.scheduler.js';
 import { logger } from './utils/logger.js';
 
@@ -20,6 +21,7 @@ const start = async () => {
 
   const app = createApp();
   const httpServer = http.createServer(app);
+  initSocket(httpServer);
   startReminderScheduler();
 
   // Without this, the HTTP server's own 'error' event (e.g. EADDRINUSE from

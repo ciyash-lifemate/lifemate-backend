@@ -1,5 +1,6 @@
 import { pool } from '../../../config/db.js';
 import { sendExpoPush } from '../../../utils/push.js';
+import { isOnline } from '../../../realtime/presence.js';
 class ApiError extends Error {
   constructor(statusCode, message) {
     super(message);
@@ -111,6 +112,29 @@ const pushEnabledFor = async (userId, column) => {
   // No settings row yet = defaults, and the defaults are both TRUE.
   if (!rows[0]) return true;
   return Boolean(rows[0].push_notifications) && Boolean(rows[0][column]);
+};
+
+export const notifyNewMessage = async (userId, { chatId, senderName, preview }) => {
+  const notification = await insertNotification({
+    userId,
+    type: 'chat',
+    title: senderName,
+    body: preview,
+    referenceId: chatId,
+  });
+
+  // Only push when the recipient has no open socket - if they're connected
+  // they already got the message over Socket.IO in realtime, and a push on top
+  // of it is just a duplicate buzz.
+  if (!isOnline(userId) && (await pushEnabledFor(userId, 'chat_notifications'))) {
+    await sendExpoPush(userId, {
+      title: senderName,
+      body: preview,
+      data: { type: 'chat', chatId },
+    });
+  }
+
+  return notification;
 };
 
 // Called by reminders.scheduler.js when a reminder falls due - always pushes
